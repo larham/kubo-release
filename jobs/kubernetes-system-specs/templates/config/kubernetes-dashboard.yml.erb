@@ -45,7 +45,7 @@ rules:
 - apiGroups: [""]
   resources: ["secrets"]
   # Allow Dashboard to get, update and delete 'kubernetes-dashboard-key-holder' secret.
-  resourceNames: ["kubernetes-dashboard-key-holder"]
+  resourceNames: ["kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs"]
   verbs: ["get", "update", "delete"]
   # Allow Dashboard to get metrics from heapster.
 - apiGroups: [""]
@@ -110,7 +110,7 @@ spec:
       - name: kubernetes-dashboard
         image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.7.1
         ports:
-        - containerPort: 9090
+        - containerPort: 8443
           protocol: TCP
         args:
           - --heapster-host=http://heapster.kube-system.svc.cluster.local:80
@@ -118,6 +118,8 @@ spec:
           # If not specified, Dashboard will attempt to auto discover the API server and connect
           # to it. Uncomment only if the default does not work.
           # - --apiserver-host=http://my-address:port
+          - --tls-cert-file=/certs/kubernetes-dashboard-cert
+          - --tls-key-file=/certs/kubernetes-dashboard-key
 <% if p('authorization-mode').downcase != 'rbac' %>
           - --kubeconfig=/var/vcap/jobs/kubelet/config/kubeconfig
         env:
@@ -128,19 +130,26 @@ spec:
           # Create on-disk volume to store exec logs
         - mountPath: /tmp
           name: tmp-volume
+        - mountPath: /certs
+          name: kubernetes-dashboard-certs
+          readOnly: true
 <% if p('authorization-mode').downcase != 'rbac' %>
         - mountPath: /var/vcap/jobs/kubelet/config/
           name: config
 <% end %>
         livenessProbe:
           httpGet:
+            scheme: HTTPS
             path: /
-            port: 9090
+            port: 8443
           initialDelaySeconds: 30
           timeoutSeconds: 30
       volumes:
       - name: tmp-volume
         emptyDir: {}
+      - name: kubernetes-dashboard-certs
+        secret:
+          secretName: kubernetes-dashboard-certs
 <% if p('authorization-mode').downcase != 'rbac' %>
       - name: config
         hostPath:
@@ -166,7 +175,7 @@ metadata:
   namespace: kube-system
 spec:
   ports:
-  - port: 80
-    targetPort: 9090
+  - port: 443
+    targetPort: 8443
   selector:
     k8s-app: kubernetes-dashboard
