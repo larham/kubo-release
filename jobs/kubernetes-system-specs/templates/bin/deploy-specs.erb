@@ -17,15 +17,16 @@ wait_for() {
 
 create_dashboard_secrets() {
   local secret_name=kubernetes-dashboard-certs
+  local namespace=kube-system
 
-  if ${kubectl} get secret ${secret_name}; then
-    ${kubectl} delete secret ${secret_name}
+  if ${kubectl} get secret ${secret_name} -n ${namespace}; then
+    ${kubectl} delete secret ${secret_name} -n ${namespace}
   fi
 
   ${kubectl} create secret generic ${secret_name} \
   --from-file=kubernetes-dashboard-cert=${config_dir}/kubernetes-dashboard/kubernetes-dashboard.crt \
   --from-file=kubernetes-dashboard-key=${config_dir}/kubernetes-dashboard/kubernetes-dashboard.key \
-  -n kube-system
+  -n ${namespace}
 }
 
 main() {
