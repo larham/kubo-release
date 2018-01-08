@@ -69,22 +69,6 @@ subjects:
   namespace: kube-system
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: kubernetes-dashboard
-  labels:
-    k8s-app: kubernetes-dashboard
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: kubernetes-dashboard
-  namespace: kube-system
-
----
 <% end %>
 # ------------------- Dashboard Deployment ------------------- #
 
@@ -114,12 +98,12 @@ spec:
           protocol: TCP
         args:
           - --heapster-host=http://heapster.kube-system.svc.cluster.local:80
+          - --tls-cert-file=/certs/kubernetes-dashboard-cert
+          - --tls-key-file=/certs/kubernetes-dashboard-key
           # Uncomment the following line to manually specify Kubernetes API server Host
           # If not specified, Dashboard will attempt to auto discover the API server and connect
           # to it. Uncomment only if the default does not work.
           # - --apiserver-host=http://my-address:port
-          - --tls-cert-file=/certs/kubernetes-dashboard-cert
-          - --tls-key-file=/certs/kubernetes-dashboard-key
 <% if p('authorization-mode').downcase != 'rbac' %>
           - --kubeconfig=/var/vcap/jobs/kubelet/config/kubeconfig
         env:
