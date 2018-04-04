@@ -84,7 +84,6 @@ start_kubelet() {
 
   kubelet \
     --allow-privileged=<%= p('allow_privileged') %> \
-    --cadvisor-port=0 \
     --cloud-config=${cloud_config} \
     --cloud-provider=${cloud_provider} \
     --cluster-dns=10.100.200.10 \
